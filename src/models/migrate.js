@@ -195,6 +195,22 @@ const migrate = async () => {
       )
     `);
 
+    // ── customer_checklist ───────────────────────────────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS customer_checklist (
+        id          UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
+        user_id     UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        task_id     TEXT        NOT NULL,
+        completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(user_id, task_id)
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_checklist_user_id ON customer_checklist(user_id)`);
+
+    // ── Schema evolution (ADD COLUMN IF NOT EXISTS) ──────────────────────────
+    await client.query(`ALTER TABLE customers ADD COLUMN IF NOT EXISTS notification_preferences JSONB`);
+    await client.query(`ALTER TABLE vendors   ADD COLUMN IF NOT EXISTS notification_preferences JSONB`);
+
     // ── Indexes ──────────────────────────────────────────────────────────────
     // jobs — most-queried filters
     await client.query(`CREATE INDEX IF NOT EXISTS idx_jobs_customer_id     ON jobs(customer_id)`);

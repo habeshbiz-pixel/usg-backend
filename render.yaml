@@ -13,7 +13,7 @@ services:
       # ALLOWED_ORIGINS should be your frontend/app origin, not the backend URL.
       # Update this after your Expo app is published (e.g. https://your-app.netlify.app)
       - key: ALLOWED_ORIGINS
-        value: https://usg-backend.onrender.com
+        value: "*"
 
       # ── Database (paste Neon connection string in Render dashboard) ──
       - key: DATABASE_URL

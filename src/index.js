@@ -21,7 +21,10 @@ const server = http.createServer(app);
 const io     = new Server(server, { cors: { origin: '*', methods: ['GET','POST'] } });
 
 app.use(helmet());
-app.use(cors({ origin: process.env.ALLOWED_ORIGINS?.split(',') || '*' }));
+const corsOrigin = process.env.ALLOWED_ORIGINS === '*' || !process.env.ALLOWED_ORIGINS
+  ? '*'
+  : process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim());
+app.use(cors({ origin: corsOrigin, credentials: true }));
 app.use(morgan('dev'));
 
 // Stripe webhooks need raw body — must come before express.json()
@@ -40,7 +43,15 @@ app.use('/api/v1/vendor',   vendorRoutes);
 app.use('/api/v1/admin',    adminRoutes);
 app.use('/api/v1/uploads',  uploadRoutes);
 
-app.get('/health', (_, res) => res.json({ status: 'ok', timestamp: new Date() }));
+app.get('/health', async (_, res) => {
+  try {
+    const { query } = require('./models/db');
+    await query('SELECT 1');
+    res.json({ status: 'ok', timestamp: new Date(), db: 'connected' });
+  } catch (err) {
+    res.status(503).json({ status: 'error', db: 'disconnected', message: err.message });
+  }
+});
 app.use(notFound);
 app.use(errorHandler);
 

@@ -20,12 +20,16 @@ router.get('/profile', async (req, res, next) => {
 
 router.put('/profile', async (req, res, next) => {
   try {
-    const { businessName, firstName, lastName, trades, serviceZipCodes, workingHours } = req.body;
+    const { businessName, firstName, lastName, trades, serviceZipCodes, workingHours, notificationPreferences } = req.body;
     await query(
       `UPDATE vendors SET business_name=$1, first_name=$2, last_name=$3,
-         trades=$4, service_zip_codes=$5, working_hours=$6
-       WHERE user_id=$7`,
-      [businessName, firstName, lastName, trades, serviceZipCodes, JSON.stringify(workingHours), req.user.id]
+         trades=$4, service_zip_codes=$5, working_hours=$6,
+         notification_preferences=COALESCE($7::jsonb, notification_preferences)
+       WHERE user_id=$8`,
+      [businessName, firstName, lastName, trades, serviceZipCodes,
+       workingHours ? JSON.stringify(workingHours) : null,
+       notificationPreferences ? JSON.stringify(notificationPreferences) : null,
+       req.user.id]
     );
     res.json({ updated: true });
   } catch (err) { next(err); }
